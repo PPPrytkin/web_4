@@ -1,15 +1,24 @@
 const fs = require("fs").promises;
 const path = require("path");
 
+async function calculateSalesTotal(salesFiles) {
+    let total = 0
+    for (let file of salesFiles) {
+        const data = JSON.parse((await fs.readFile(file)).toString())
+        total += data.total
+    }
+    return total
+}
+
 async function findSalesFiles(folderName) {
     // массив будет содержать файлы продаж по мере их обнаружения
     let salesFiles = [];
 
     async function findFiles(folderName) {
         // чтение всех элементов в текущей папке
-        const items = await fs.readdir(folderName, { withFileTypes: true });
+        const items = await fs.readdir(folderName, {withFileTypes: true});
         // перебор каждого найденного элемента
-        for (item of items) {
+        for (let item of items) {
             // если элемент является каталогом, в нем нужно будет искать файлы
             // рекурсивно искать в этом каталоге файлы
             if (item.isDirectory()) {
@@ -35,12 +44,18 @@ async function main() {
     const salesDir = path.join(__dirname, "stores");
     const salesTotalsDir = path.join(__dirname, "salesTotals");
     try {
-    await fs.mkdir(salesTotalsDir);
+        await fs.mkdir(salesTotalsDir);
     } catch {
-    console.log(`${salesTotalsDir} уже существует!`);
+        console.log(`${salesTotalsDir} уже существует!`);
     }
     const salesFiles = await findSalesFiles(salesDir);
-    await fs.writeFile(path.join(salesTotalsDir, "totals.txt"), String());
+    const salesTotal = await calculateSalesTotal(salesFiles);
+    await fs.writeFile(
+        path.join(salesTotalsDir, "result.txt"),
+        `${salesTotal}\r\n`,
+        {flag: "a"}
+    );
 }
+
 
 main()
